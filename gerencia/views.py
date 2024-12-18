@@ -72,19 +72,24 @@ def editar_noticia(request, id):
 @login_required(login_url="usuarios:login")
 def listagem_categoria(request):
     formularioFiltro = CategoriaFilterForm(request.GET or None)
+    
+    # Aplica o filtro ao QuerySet
     categorias_lista = Categoria.objects.all().order_by(Lower('nome'))
-    paginator = Paginator(categorias_lista, 5)
-    page = request.GET.get('page', 1)
-    categorias = paginator.page(page)
     if formularioFiltro.is_valid():
         if formularioFiltro.cleaned_data['nome']:
-            categorias = categorias.filter(nome__icontains=formularioFiltro.cleaned_data['nome'])
-        
-    contexto = {
+            categorias_lista = categorias_lista.filter(nome__icontains=formularioFiltro.cleaned_data['nome'])
+
+    # Paginação
+    paginator = Paginator(categorias_lista, 5)
+    page = request.GET.get('page', 1)
+    categorias = paginator.get_page(page)
+
+    # Retorna o contexto para o template
+    return render(request, 'gerencia/listagem_categoria.html', {
+        'formularioFiltro': formularioFiltro,
         'categorias': categorias,
-        'formularioFiltro': formularioFiltro
-    }
-    return render(request, 'gerencia/listagem_categoria.html',contexto)
+    })
+        
 
 @login_required(login_url="usuarios:login")
 def cadastrar_categoria(request):
@@ -123,35 +128,6 @@ def excluir_categoria(request, id):
     categoria = Categoria.objects.get(id=id)
     categoria.delete()
     return redirect('gerencia:listagem_categoria')
-
-
-
-
-
-
-@login_required(login_url="usuarios:login")
-def listagem_Voo(request):
-    formularioFiltro = VooFilterForm(request.GET or None)
-    voos = Voo.objects.all()  # Primeiro pega todos os voos
-    if formularioFiltro.is_valid():
-        if formularioFiltro.cleaned_data['nome']:
-            # Aplique o filtro no queryset
-            voos = voos.filter(nome__icontains=formularioFiltro.cleaned_data['nome'])
-
-    voos = voos.order_by(Lower('nome'))  # Agora ordena os voos após o filtro
-    paginator = Paginator(voos, 5)
-    page = request.GET.get('page', 1)
-    voos_paginados = paginator.page(page)  # Obtenha a página correta dos voos
-
-    contexto = {
-        'Voos': voos_paginados,
-        'formularioFiltro': formularioFiltro
-    }
-    return render(request, 'gerencia/listagem_Voo.html', contexto)
-
-
-
-
 
 
 
